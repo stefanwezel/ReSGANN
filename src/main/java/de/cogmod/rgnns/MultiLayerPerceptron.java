@@ -319,16 +319,16 @@ public class MultiLayerPerceptron {
             // while considering the shuffled order and update the weights 
             // immediately after each sample
             // iterate over dataset
-            for (int n=0; n<input.length; n++){
+            for (int sample_idx=0; sample_idx<input.length; sample_idx++){
                 double [] prediction = new double [2];
                 double[] sample = new double [2];
                 for (int m=0; m<1; m++){
-                    sample[m] = input[n][m];
+                    sample[m] = input[sample_idx][m];
                 }
                 prediction = this.forwardPass(sample);
+                error = RMSE(prediction, target[sample_idx]);
+//                System.out.println(error);
             }
-//            System.out.println(input.length);
-//            System.out.println(input[0][0]);
 
 
             // ...
