@@ -1,5 +1,6 @@
 package de.cogmod.rgnns;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import de.cogmod.rgnns.misc.LearningListener;
@@ -195,14 +196,32 @@ public class MultiLayerPerceptron {
         // this.bwbuffer functions analogously to this.net but is used to
         // store into "back-flowing" inputs (deltas).
         //
-//        System.out.println(this.bwbuffer);
-        // ...
+        double error = Double.POSITIVE_INFINITY;
+        error = RMSE(this.act[this.act.length - 1], target);
 
-        
-        //
         // back-propagate the error through the network -- we compute the deltas --
         // starting with the output layer.
-        //
+        for (int i = 0; i < target.length; i++) {
+            this.delta[this.layersnum-1][0] += (this.act[this.act.length-1])[i] - target[i];
+        }
+        // compute deltas for other layers
+        for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
+
+            final int prelayersize = this.layer[l+1]; // := 1
+            final int layersize    = this.layer[l]; // := 3
+
+            for (int i = 0; i < layersize; i++) {
+                for (int j = 0; j < prelayersize; j++) {
+                    this.delta[l][i] = sigmoidDx(net[l][i]) * this.weights[l][i][j] * this.delta[l+1][j];
+                }
+            }
+        }
+
+
+
+
+
+
 
         // ...
         
@@ -326,8 +345,12 @@ public class MultiLayerPerceptron {
                     sample[m] = input[sample_idx][m];
                 }
                 prediction = this.forwardPass(sample);
-                error = RMSE(prediction, target[sample_idx]);
-//                System.out.println(error);
+//                System.out.println(prediction[0]);
+//                error = RMSE(prediction, target[sample_idx]);
+//                errorsum += error;
+//                System.out.println(this.bwbuffer.length);
+
+                this.backwardPass(target[sample_idx]);
             }
 
 
