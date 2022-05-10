@@ -202,6 +202,7 @@ public class MultiLayerPerceptron {
         // back-propagate the error through the network -- we compute the deltas --
         // starting with the output layer.
         for (int i = 0; i < target.length; i++) {
+//            this.delta[this.layersnum-1][0] += (this.act[this.act.length-1])[i] - target[i];
             this.delta[this.layersnum-1][0] += (this.act[this.act.length-1])[i] - target[i];
         }
         // compute deltas for other layers
@@ -209,16 +210,33 @@ public class MultiLayerPerceptron {
 
             final int prelayersize = this.layer[l+1]; // := 1
             final int layersize    = this.layer[l]; // := 3
-
+//            // for debugging
+//            for (int i = 1; i < this.weights.length; i++) {
+//                for (int j = 0; j < this.weights[i].length; j++) {
+//                    System.out.println(Arrays.toString(this.weights[i][j]));
+//
+//                }
+//            }
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
-                    this.delta[l][i] = sigmoidDx(net[l][i]) * this.weights[l][i][j] * this.delta[l+1][j];
+                    this.delta[l][i] += sigmoidDx(net[l][i]) * this.weights[l+1][i][j] * this.delta[l+1][j];
                 }
             }
         }
 
 
 
+
+        for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
+            final int prelayersize = this.layer[l+1]; // := 1
+            final int layersize    = this.layer[l]; // := 3
+
+            for (int i = 0; i < layersize; i++) {
+                for (int j = 0; j < prelayersize; j++) {
+                    this.weights[l+1][i][j] += this.delta[l+1][j];
+                }
+            }
+        }
 
 
 
@@ -346,8 +364,8 @@ public class MultiLayerPerceptron {
                 }
                 prediction = this.forwardPass(sample);
 //                System.out.println(prediction[0]);
-//                error = RMSE(prediction, target[sample_idx]);
-//                errorsum += error;
+                error = RMSE(prediction, target[sample_idx]);
+                errorsum += error;
 //                System.out.println(this.bwbuffer.length);
 
                 this.backwardPass(target[sample_idx]);
