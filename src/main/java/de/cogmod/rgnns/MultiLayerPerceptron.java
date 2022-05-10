@@ -203,7 +203,7 @@ public class MultiLayerPerceptron {
         // starting with the output layer.
         for (int i = 0; i < target.length; i++) {
 //            this.delta[this.layersnum-1][0] += (this.act[this.act.length-1])[i] - target[i];
-            this.delta[this.layersnum-1][0] += (this.act[this.act.length-1])[i] - target[i];
+            this.delta[this.layersnum-1][0] += sigmoidDx(this.net[layersnum-1][i]) * (this.act[this.act.length-1])[i] - target[i];
         }
         // compute deltas for other layers
         for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
@@ -219,22 +219,25 @@ public class MultiLayerPerceptron {
 //            }
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
-                    this.delta[l][i] += sigmoidDx(net[l][i]) * this.weights[l+1][i][j] * this.delta[l+1][j];
+                    this.delta[l][i] += sigmoidDx(this.net[l][i]) * this.weights[l+1][i][j] * this.delta[l+1][j];
                 }
+
             }
         }
 
 
-
-
+        // Add deltas to weights
         for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
             final int prelayersize = this.layer[l+1]; // := 1
             final int layersize    = this.layer[l]; // := 3
-
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
-                    this.weights[l+1][i][j] += this.delta[l+1][j];
+                    this.dweights[l+1][i][j] = this.act[l][i] *  this.delta[l+1][j];
+                    if(this.usebias[l]){
+                        this.dweights[l+1][prelayersize][j] = BIAS * this.delta[l+1][j];
+                    }
                 }
+
             }
         }
 
@@ -327,9 +330,10 @@ public class MultiLayerPerceptron {
         //
         final double[] weights           = new double[this.weightsnum];
         final double[] dweights          = new double[this.weightsnum];
-        final double[] weightsupdate     = new double[this.weightsnum];
+        final double[][][] weightsupdate     = new double[this.weightsnum][][];
         //
         this.readWeights(weights);
+        this.readDWeights(dweights);
         //
 //        MultiLayerPerceptron model = new MultiLayerPerceptron(inputsize,23);
         // create initial index permutation.
@@ -343,7 +347,7 @@ public class MultiLayerPerceptron {
         //
         // epoch loop.
         //
-        for (int i = 0; i < epochs; i++) {
+        for (int e = 0; e < epochs; e++) {
             //
 
             // shuffle indices.
@@ -362,13 +366,40 @@ public class MultiLayerPerceptron {
                 for (int m=0; m<1; m++){
                     sample[m] = input[sample_idx][m];
                 }
+
                 prediction = this.forwardPass(sample);
-//                System.out.println(prediction[0]);
                 error = RMSE(prediction, target[sample_idx]);
                 errorsum += error;
-//                System.out.println(this.bwbuffer.length);
 
                 this.backwardPass(target[sample_idx]);
+
+//                weightsupdate = this.weights;
+
+                // update weights
+                for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
+                    weightsupdate[l+1] = this.dweights[l+1];
+                    final int prelayersize = this.layer[l+1]; // := 1
+                    final int layersize    = this.layer[l]; // := 3
+                    for (int i = 0; i < layersize; i++) {
+                        for (int j = 0; j < prelayersize; j++) {
+                            if (l == 0){
+                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate;
+                                if(this.usebias[l+1]){
+                                    this.dweights[l+1][prelayersize][j] -= BIAS * this.dweights[l+1][prelayersize][j];
+                                }
+                            }else {
+                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate + momentumrate * weightsupdate[l+1][i][j];
+                                if(this.usebias[l+1]){
+                                    this.dweights[l+1][prelayersize][j] -= BIAS * this.dweights[l+1][prelayersize][j] + momentumrate * weightsupdate[l+1][i][j];
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+
             }
 
 
@@ -376,7 +407,7 @@ public class MultiLayerPerceptron {
             
             //
             error = errorsum / (double)(input.length);
-            if (listener != null) listener.afterEpoch(i + 1, error);
+            if (listener != null) listener.afterEpoch(e + 1, error);
         }
         //
         return error;
