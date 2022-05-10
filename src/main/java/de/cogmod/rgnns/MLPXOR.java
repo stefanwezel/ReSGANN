@@ -24,7 +24,7 @@ public class MLPXOR {
         // be deactivated using net.setBias(layer, false),
         // where layer gives the layer index (1 = the first hidden layer).
         // 
-        final MultiLayerPerceptron net = new MultiLayerPerceptron(2, 20, 1);
+        final MultiLayerPerceptron net = new MultiLayerPerceptron(2, 10, 1);
         //
         // perform training.
         //
