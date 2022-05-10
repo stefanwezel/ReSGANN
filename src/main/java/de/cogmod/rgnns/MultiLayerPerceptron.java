@@ -202,7 +202,6 @@ public class MultiLayerPerceptron {
         // back-propagate the error through the network -- we compute the deltas --
         // starting with the output layer.
         for (int i = 0; i < target.length; i++) {
-//            this.delta[this.layersnum-1][0] += (this.act[this.act.length-1])[i] - target[i];
             this.delta[this.layersnum-1][0] += sigmoidDx(this.net[this.net.length-1][i]) * (this.act[this.act.length-1][i] - target[i]);
         }
         // compute deltas for other layers
@@ -218,34 +217,19 @@ public class MultiLayerPerceptron {
             }
         }
 
-
         // Add deltas to weights
-        for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
+        for (int l = this.layersnum-2; l >= 0 ; l--) { // layersnum := 3
             final int prelayersize = this.layer[l+1]; // := 1
             final int layersize    = this.layer[l]; // := 3
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
-                    this.dweights[l+1][i][j] = this.act[l][i] * this.delta[l+1][j];
+                    this.dweights[l+1][i][j] = this.act[l+1][j] * this.delta[l+1][j];
                     if(this.usebias[l+1]){
-                        this.dweights[l+1][prelayersize][j] = BIAS * this.delta[l+1][j];
+                        this.dweights[l+1][layersize][0] = BIAS * this.delta[l+1][j];
                     }
                 }
-
             }
         }
-
-
-
-
-        // ...
-        
-        
-        // 
-        // Compute the weights derivatives.
-        //
-        // this.dweights !!!!
-        // ...
-
     }
     
     /**
@@ -364,35 +348,37 @@ public class MultiLayerPerceptron {
                 error = RMSE(prediction, target[sample_idx]);
                 errorsum += error;
 
+                // compute deltas
                 this.backwardPass(target[sample_idx]);
 
                 // update weights
                 for (int l = this.layersnum-2; l >= 0 ; l--) { // layersnum := 3
                     weightsupdate[l+1] = this.dweights[l+1];
-                    final int prelayersize = this.layer[l+1]; // := 1
-                    final int layersize    = this.layer[l]; // := 3
+                    final int prelayersize = this.layer[l+1];
+                    final int layersize    = this.layer[l];
                     for (int i = 0; i < layersize; i++) {
+                        // die Fallunterscheidung macht eigentlich nicht wirklich Sinn, oder?
+                        // Ich verstehe nicht, warum man fuer die weights von input zu hidden kein Momentum verwenden sollte
                         for (int j = 0; j < prelayersize; j++) {
-                            if (l == 0){
-                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate;
+//                            if (l == 0){
+//                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate;
+//                                if(this.usebias[l+1]){
+//                                    this.weights[l+1][layersize][j] -= BIAS * this.dweights[l+1][layersize][j];
+//                                }
+//                            }else {
+//                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate + momentumrate * weightsupdate[l+1][i][j];
+//                                if(this.usebias[l+1]){
+//                                    this.weights[l+1][layersize][j] -= BIAS * this.dweights[l+1][layersize][j] + momentumrate * weightsupdate[l+1][i][j];
+//                                }
+//                            }
+                            this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate + momentumrate * weightsupdate[l+1][i][j];
                                 if(this.usebias[l+1]){
-                                    this.weights[l+1][layersize][j] -= BIAS * this.dweights[l+1][layersize][j];
+                                    this.weights[l+1][layersize][0] -= BIAS * this.dweights[l+1][layersize][0] + momentumrate * weightsupdate[l+1][layersize][0];
                                 }
-                            }else {
-                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate + momentumrate * weightsupdate[l+1][i][j];
-                                if(this.usebias[l+1]){
-                                    this.weights[l+1][layersize][j] -= BIAS * this.dweights[l+1][layersize][j] + momentumrate * weightsupdate[l+1][i][j];
-                                }
-                            }
                         }
                     }
                 }
             }
-
-
-            // ...
-
-            //
             error = errorsum / (double)(input.length);
             if (listener != null) listener.afterEpoch(e + 1, error);
         }

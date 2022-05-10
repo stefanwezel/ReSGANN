@@ -123,13 +123,13 @@ public class MLPGeometry {
         //
         // set up network (biases are used by default).
         //
-        final MultiLayerPerceptron net = new MultiLayerPerceptron(2, 20, 1);
+        final MultiLayerPerceptron net = new MultiLayerPerceptron(2, 30, 1);
         System.out.println(net.getWeightsNum());
         //
         // perform training.
         //
         final int epochs          = 2000;   // don't change this value!
-        final double learningrate = 1;
+        final double learningrate = 0.1;
         final double momentumrate = 0.9;
         //
         // generate initial weights.
