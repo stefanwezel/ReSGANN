@@ -201,19 +201,25 @@ public class MultiLayerPerceptron {
         // back-propagate the error through the network -- we compute the deltas --
         // starting with the output layer.
         for (int i = 0; i < target.length; i++) {
-            this.delta[this.layersnum-1][i] = sigmoidDx(this.net[this.net.length-1][i]) * (this.act[this.act.length-1][i] - target[i]);
-            // ??????? wieso this.delta[this.layersnum-1][0] die Null? i ergibt mehr Sinn
-            // und + weg brauchts in diesem Fall nicht
+//            this.delta[this.layersnum-1][i] = sigmoidDx(this.net[this.net.length-1][i]) * (this.act[this.act.length-1][i] - target[i]);
+            this.bwbuffer[this.bwbuffer.length-1][i] = this.act[this.act.length-1][i] - target[i];
         }
-        // compute deltas for other layers
-        for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
 
-            final int prelayersize = this.layer[l+1]; // := 1
-            final int layersize    = this.layer[l]; // := 3
+        // compute deltas for other layers
+        for (int l = this.layersnum-1; l >= 1 ; l--) {
+            final int prelayersize = this.layer[l-1];
+            final int layersize    = this.layer[l];
 
             for (int i = 0; i < layersize; i++) {
-                for (int j = 0; j < prelayersize; j++) {
-                    this.delta[l+1][j] += sigmoidDx(this.net[l][i]) * this.weights[l+1][i][j] * this.delta[l+1][j];
+                this.delta[l][i] = sigmoidDx(this.net[l][i]) * this.bwbuffer[l][i];
+            }
+            for (int j = 0; j < prelayersize; j++) {
+                double tmp_buffer = 0.0;
+                for (int i = 0; i < layersize; i++) {
+                    tmp_buffer += this.weights[l][j][i] * this.bwbuffer[l][i];
+                }
+                if (l>1){
+                    this.bwbuffer[l-1][j] = tmp_buffer;
                 }
             }
         }
