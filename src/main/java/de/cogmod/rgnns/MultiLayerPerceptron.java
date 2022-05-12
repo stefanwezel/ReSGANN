@@ -163,11 +163,9 @@ public class MultiLayerPerceptron {
                 // eventually initialize netj with the weighted bias.
                 //
                 double netj = 0;
-                //
                 if (this.usebias[l]) {
                     netj = BIAS * this.weights[l][prelayersize][j];
                 }
-                //
                 for (int i = 0; i < prelayersize; i++) {
                     netj += this.act[l - 1][i] * this.weights[l][i][j];
                 }
@@ -194,14 +192,9 @@ public class MultiLayerPerceptron {
         // this.bwbuffer functions analogously to this.net but is used to
         // store into "back-flowing" inputs (deltas).
         //
-
-        // double error = Double.POSITIVE_INFINITY;                    // an der Stelle unnötig
-        // double error = RMSE(this.act[this.act.length - 1], target);
-
         // back-propagate the error through the network -- we compute the deltas --
         // starting with the output layer.
         for (int i = 0; i < target.length; i++) {
-//            this.delta[this.layersnum-1][i] = sigmoidDx(this.net[this.net.length-1][i]) * (this.act[this.act.length-1][i] - target[i]);
             this.bwbuffer[this.bwbuffer.length-1][i] = this.act[this.act.length-1][i] - target[i];
         }
 
@@ -225,10 +218,10 @@ public class MultiLayerPerceptron {
         }
 
         // Add deltas to weights
-        for (int l = this.layersnum-2; l >= 0 ; l--) { // layersnum := 3
+        for (int l = this.layersnum-2; l >= 0 ; l--) {
 
-            final int prelayersize = this.layer[l+1]; // := 1
-            final int layersize    = this.layer[l]; // := 3
+            final int prelayersize = this.layer[l+1];
+            final int layersize    = this.layer[l];
 
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
@@ -349,35 +342,29 @@ public class MultiLayerPerceptron {
                 double[] prediction = new double[2];
                 double[] sample = new double[2];
 
-                sample = input[indices[sample_idx]];        // jeweils nicht input[sample_idx], ist ja geshuffelt, daher indice
+                sample = input[indices[sample_idx]];
 
                 prediction = this.forwardPass(sample);
 
-                error = RMSE(prediction, target[indices[sample_idx]]);          // hier auch
+                error = RMSE(prediction, target[indices[sample_idx]]);
                 errorsum += error;
 
                 // compute deltas
-                this.backwardPass(target[indices[sample_idx]]);                 // und hier
+                this.backwardPass(target[indices[sample_idx]]);
 
                 // update weights
-                for (int l = this.layersnum - 2; l >= 0; l--) { // layersnum := 3
+                for (int l = this.layersnum - 2; l >= 0; l--) {
                     final int prelayersize = this.layer[l+1];
                     final int layersize = this.layer[l];
-                    // bei den beiden kommenden Schleifen intuitiv einfacher über weights zu gehen oder?
-                    // Und brauchen die bias nicht extra
                     for (int i = 0; i < this.weights[l+1].length; i++) {
-                        // die Fallunterscheidung macht eigentlich nicht wirklich Sinn, oder?
-                        // Ich verstehe nicht, warum man fuer die weights von input zu hidden kein Momentum verwenden sollte
-                        // - wenn weightsupdate null dann brauchts den Momentum nicht.
                         for (int j = 0; j < this.weights[l+1][i].length; j++) {
-
                             if (weightsupdate[l + 1] == null) {
                                 this.weights[l + 1][i][j] -= this.dweights[l + 1][i][j] * learningrate;
                             } else {
                                 this.weights[l + 1][i][j] -= this.dweights[l + 1][i][j] * learningrate + momentumrate * weightsupdate[l + 1][i][j];
                             }
                         }
-                        weightsupdate[l+1] = this.dweights[l+1];        // hier und nicht oben sonst verwenden wir's doppelt
+                        weightsupdate[l+1] = this.dweights[l+1];
                     }
                 }
             }
