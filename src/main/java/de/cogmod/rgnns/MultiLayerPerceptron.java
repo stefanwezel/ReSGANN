@@ -67,7 +67,7 @@ public class MultiLayerPerceptron {
     public MultiLayerPerceptron(
         final int input, final int layer2, final int... layern 
     ) {
-        //
+
         this.inputsize = input;
         this.layer     = join(input, layer2, layern);
         this.layersnum = this.layer.length;
@@ -81,16 +81,16 @@ public class MultiLayerPerceptron {
         this.usebias  = new boolean[this.layersnum];
         this.weights  = new double[this.layersnum][][];
         this.dweights = new double[this.layersnum][][];
-        //
+
         this.weights[0]  = null;
         this.dweights[0] = null;
-        //
+
         int sumweights = 0;
-        //
+
         for (int l = 0; l < this.layersnum; l++) {
-            //
+
             this.usebias[l] = true;
-            //
+
             if (l > 0) {
                 //
                 // we don't need the net buffer for input neurons.
@@ -113,12 +113,10 @@ public class MultiLayerPerceptron {
                 //
                 this.weights[l]  = new double[this.layer[l - 1] + 1][this.layer[l]];
                 this.dweights[l] = new double[this.layer[l - 1] + 1][this.layer[l]];
-                //
+
                 sumweights += (this.layer[l - 1] + 1) * (this.layer[l]);
             }
-            //
         }
-        //
         this.weightsnum = sumweights;
     }
     
@@ -196,13 +194,16 @@ public class MultiLayerPerceptron {
         // this.bwbuffer functions analogously to this.net but is used to
         // store into "back-flowing" inputs (deltas).
         //
-        double error = Double.POSITIVE_INFINITY;
-        error = RMSE(this.act[this.act.length - 1], target);
+
+        // double error = Double.POSITIVE_INFINITY;                    // an der Stelle unnötig
+        // double error = RMSE(this.act[this.act.length - 1], target);
 
         // back-propagate the error through the network -- we compute the deltas --
         // starting with the output layer.
         for (int i = 0; i < target.length; i++) {
-            this.delta[this.layersnum-1][0] += sigmoidDx(this.net[this.net.length-1][i]) * (this.act[this.act.length-1][i] - target[i]);
+            this.delta[this.layersnum-1][i] = sigmoidDx(this.net[this.net.length-1][i]) * (this.act[this.act.length-1][i] - target[i]);
+            // ??????? wieso this.delta[this.layersnum-1][0] die Null? i ergibt mehr Sinn
+            // und + weg brauchts in diesem Fall nicht
         }
         // compute deltas for other layers
         for (int l = this.layersnum-2; l >= 1 ; l--) { // layersnum := 3
@@ -212,21 +213,22 @@ public class MultiLayerPerceptron {
 
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
-                    this.delta[l][i] += sigmoidDx(this.net[l][i]) * this.weights[l+1][i][j] * this.delta[l+1][j];
+                    this.delta[l+1][j] += sigmoidDx(this.net[l][i]) * this.weights[l+1][i][j] * this.delta[l+1][j];
                 }
             }
         }
 
         // Add deltas to weights
         for (int l = this.layersnum-2; l >= 0 ; l--) { // layersnum := 3
+
             final int prelayersize = this.layer[l+1]; // := 1
             final int layersize    = this.layer[l]; // := 3
+
             for (int i = 0; i < layersize; i++) {
                 for (int j = 0; j < prelayersize; j++) {
-                    this.dweights[l+1][i][j] = this.act[l+1][j] * this.delta[l+1][j];
-                    if(this.usebias[l+1]){
-                        this.dweights[l+1][layersize][0] = BIAS * this.delta[l+1][j];
-                    }
+                    this.dweights[l+1][i][j] = this.act[l][i] * this.delta[l+1][j];
+                    if(this.usebias[l+1])
+                        this.dweights[l+1][layersize][j] = BIAS * this.delta[l+1][j];
                 }
             }
         }
@@ -308,25 +310,23 @@ public class MultiLayerPerceptron {
         final double[] weights           = new double[this.weightsnum];
         final double[] dweights          = new double[this.weightsnum];
         final double[][][] weightsupdate     = new double[this.weightsnum][][];
-        //
+
         this.readWeights(weights);
         this.readDWeights(dweights);
         //
-//        MultiLayerPerceptron model = new MultiLayerPerceptron(inputsize,23);
+        // MultiLayerPerceptron model = new MultiLayerPerceptron(inputsize,23);
         // create initial index permutation.
         //
         final int[] indices = new int[input.length];
         for (int i = 0; i < indices.length; i++) {
             indices[i] = i;
         }
-        //
         double error = Double.POSITIVE_INFINITY;
         //
         // epoch loop.
         //
         for (int e = 0; e < epochs; e++) {
             //
-
             // shuffle indices.
             //
             Tools.shuffle(indices, rnd);
@@ -337,52 +337,47 @@ public class MultiLayerPerceptron {
             // while considering the shuffled order and update the weights 
             // immediately after each sample
             // iterate over dataset
-            for (int sample_idx=0; sample_idx<input.length; sample_idx++){
-                double [] prediction = new double [2];
-                double[] sample = new double [2];
+            //
+            for (int sample_idx = 0; sample_idx < input.length; sample_idx++) {
 
-                sample = input[sample_idx];
+                double[] prediction = new double[2];
+                double[] sample = new double[2];
+
+                sample = input[indices[sample_idx]];        // jeweils nicht input[sample_idx], ist ja geshuffelt, daher indice
 
                 prediction = this.forwardPass(sample);
 
-                error = RMSE(prediction, target[sample_idx]);
+                error = RMSE(prediction, target[indices[sample_idx]]);          // hier auch
                 errorsum += error;
 
                 // compute deltas
-                this.backwardPass(target[sample_idx]);
+                this.backwardPass(target[indices[sample_idx]]);                 // und hier
 
                 // update weights
-                for (int l = this.layersnum-2; l >= 0 ; l--) { // layersnum := 3
-                    weightsupdate[l+1] = this.dweights[l+1];
+                for (int l = this.layersnum - 2; l >= 0; l--) { // layersnum := 3
                     final int prelayersize = this.layer[l+1];
-                    final int layersize    = this.layer[l];
-                    for (int i = 0; i < layersize; i++) {
+                    final int layersize = this.layer[l];
+                    // bei den beiden kommenden Schleifen intuitiv einfacher über weights zu gehen oder?
+                    // Und brauchen die bias nicht extra
+                    for (int i = 0; i < this.weights[l+1].length; i++) {
                         // die Fallunterscheidung macht eigentlich nicht wirklich Sinn, oder?
                         // Ich verstehe nicht, warum man fuer die weights von input zu hidden kein Momentum verwenden sollte
-                        for (int j = 0; j < prelayersize; j++) {
-//                            if (l == 0){
-//                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate;
-//                                if(this.usebias[l+1]){
-//                                    this.weights[l+1][layersize][j] -= BIAS * this.dweights[l+1][layersize][j];
-//                                }
-//                            }else {
-//                                this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate + momentumrate * weightsupdate[l+1][i][j];
-//                                if(this.usebias[l+1]){
-//                                    this.weights[l+1][layersize][j] -= BIAS * this.dweights[l+1][layersize][j] + momentumrate * weightsupdate[l+1][i][j];
-//                                }
-//                            }
-                            this.weights[l+1][i][j] -= this.dweights[l+1][i][j] *  learningrate + momentumrate * weightsupdate[l+1][i][j];
-                                if(this.usebias[l+1]){
-                                    this.weights[l+1][layersize][0] -= BIAS * this.dweights[l+1][layersize][0] + momentumrate * weightsupdate[l+1][layersize][0];
-                                }
+                        // - wenn weightsupdate null dann brauchts den Momentum nicht.
+                        for (int j = 0; j < this.weights[l+1][i].length; j++) {
+
+                            if (weightsupdate[l + 1] == null) {
+                                this.weights[l + 1][i][j] -= this.dweights[l + 1][i][j] * learningrate;
+                            } else {
+                                this.weights[l + 1][i][j] -= this.dweights[l + 1][i][j] * learningrate + momentumrate * weightsupdate[l + 1][i][j];
+                            }
                         }
+                        weightsupdate[l+1] = this.dweights[l+1];        // hier und nicht oben sonst verwenden wir's doppelt
                     }
                 }
             }
-            error = errorsum / (double)(input.length);
+            error = errorsum / (double) (input.length);
             if (listener != null) listener.afterEpoch(e + 1, error);
         }
-        //
         return error;
     }
     
@@ -393,17 +388,15 @@ public class MultiLayerPerceptron {
      * @param target Target vector.
      * @return RMSE value.
      */
+
     public static double RMSE(final double[] output, final double[] target) {
-        //
+
         double error = 0;
-        //
+
         for (int i = 0; i < target.length; i++) {
             final double e = output[i] - target[i];
             error += (e * e);
         }
-        //
         return Math.sqrt(error / (double)(target.length));
     }
-
-
 }
