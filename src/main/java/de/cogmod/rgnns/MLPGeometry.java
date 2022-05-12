@@ -129,7 +129,7 @@ public class MLPGeometry {
         // perform training.
         //
         final int epochs          = 2000;   // don't change this value!
-        final double learningrate = 0.1;
+        final double learningrate = 0.005;
         final double momentumrate = 0.9;
         //
         // generate initial weights.
