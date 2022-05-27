@@ -335,9 +335,24 @@ public class RecurrentNeuralNetwork {
                 final int layersize    = this.layer[l];                //
                 for (int i = 0; i < layersize; i++) {
                     this.delta[l][i][t] = tanhDx(this.net[l][i][t]) * this.bwbuffer[l][i][t];
+
+                for (int j = 0; j < prelayersize; j++) {
+                    double tmp_buffer = 0.0;
+
+                    for (int k = 0; k < layersize; k++) {
+                        tmp_buffer += this.weights[l-1][l][j][k] * this.bwbuffer[l][k][t];
+
+                    }
+                    if (l>1){
+                        this.bwbuffer[l-1][j][t] = tmp_buffer;
+                    }
+                    }
+//                if (l>1){
+//                    this.bwbuffer[l-1][i][t] = tmp_buffer;
+//                }
                 }
-                System.out.println(this.weights.length);
 //                for (int j = 0; j < prelayersize; j++) {
+//                    this.weights[l][l+1][]
 //                    double tmp_buffer = 0.0;
 //                    for (int i = 0; i < layersize; i++) {
 //                        tmp_buffer += this.weights[l][j][i][t] * this.bwbuffer[l][i][t];
