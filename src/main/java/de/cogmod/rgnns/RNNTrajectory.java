@@ -77,7 +77,7 @@ public class RNNTrajectory {
         //
         // perform training.
         //
-        final int epochs = 100000;
+        final int epochs = 10;//100000;
         final double learningrate = 0.00002;
         final double momentumrate = 0.95;
         //

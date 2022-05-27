@@ -1,4 +1,5 @@
 package de.cogmod.rgnns;
+import java.util.Arrays;
 
 import java.util.Random;
 
@@ -327,15 +328,26 @@ public class RecurrentNeuralNetwork {
                     this.bwbuffer[outputlayer][j][t] = (this.act[outputlayer][j][t] - target[t_target][j]);
                 }
             }
-            //
-            // back-propagate the error through the network -- we compute the deltas --
-            // starting with the output layer.
-            //
-
-            
             // for ... {
-            
-                //
+//            for
+            for (int l = this.layersnum-1; l >= 1 ; l--) {
+                final int prelayersize = this.layer[l-1];
+                final int layersize    = this.layer[l];                //
+                for (int i = 0; i < layersize; i++) {
+                    this.delta[l][i][t] = tanhDx(this.net[l][i][t]) * this.bwbuffer[l][i][t];
+                }
+                System.out.println(this.weights.length);
+//                for (int j = 0; j < prelayersize; j++) {
+//                    double tmp_buffer = 0.0;
+//                    for (int i = 0; i < layersize; i++) {
+//                        tmp_buffer += this.weights[l][j][i][t] * this.bwbuffer[l][i][t];
+//                    }
+////                    if (l>1){
+////                        this.bwbuffer[l-1][j][t] = tmp_buffer;
+////                    }
+//                }
+            }
+
                 // integrate deltas for non-output layers.
                 //
             
@@ -479,7 +491,7 @@ public class RecurrentNeuralNetwork {
             //
             // shuffle indices.
             //
-            Tools.shuffle(indices, rnd);
+//            Tools.shuffle(indices, rnd);
             //
             double errorsum = 0.0;
             //
@@ -487,7 +499,38 @@ public class RecurrentNeuralNetwork {
             // while considering the shuffled order and update the weights 
             // immediately after each sample
             //
+            for (int e = 0; e < epochs; e++) {
+                //
+                // shuffle indices.
+                //
+//                Tools.shuffle(indices, rnd);
+                //
+//                double errorsum = 0.0;
 
+//                System.out.println(input[0][0].length);
+//                this.forwardPass(input[0]);
+                double[][] prediction = new double[input[0].length][2];
+//                double[][] prediction = new double[][];
+//                System.out.println(Arrays.toString(input));
+
+//                System.out.println(target[0].length);
+                for (int t = 0; t < input[0].length; t++) {
+//                    System.out.println(Arrays.toString(input[0][t]));
+                    prediction[t] = this.forwardPass(input[0][t]);
+                }
+
+                this.backwardPass(target[0]);
+//                for (int t = 0; t < target[0].length; t++) {
+//                    for (int j = 0; j < 2; j++) {
+//                        errorsum += RMSE(prediction, );
+//
+//                    }
+//                }
+//                System.out.println(errorsum);
+
+                error = errorsum / (double) (input.length);
+                if (listener != null) listener.afterEpoch(e + 1, error);
+            }
             // ...
         
             error = errorsum / (double)(input.length);
