@@ -341,26 +341,29 @@ public class RecurrentNeuralNetwork {
 
                     for (int k = 0; k < layersize; k++) {
                         tmp_buffer += this.weights[l-1][l][j][k] * this.bwbuffer[l][k][t];
-
                     }
                     if (l>1){
                         this.bwbuffer[l-1][j][t] = tmp_buffer;
-                    }
+                        }
                     }
 //                if (l>1){
 //                    this.bwbuffer[l-1][i][t] = tmp_buffer;
 //                }
                 }
-//                for (int j = 0; j < prelayersize; j++) {
-//                    this.weights[l][l+1][]
-//                    double tmp_buffer = 0.0;
-//                    for (int i = 0; i < layersize; i++) {
-//                        tmp_buffer += this.weights[l][j][i][t] * this.bwbuffer[l][i][t];
-//                    }
-////                    if (l>1){
-////                        this.bwbuffer[l-1][j][t] = tmp_buffer;
-////                    }
-//                }
+            }
+            // update dweights
+            for (int l = this.layersnum-1; l >= 1 ; l--) {
+                final int prelayersize = this.layer[l-1];
+                final int layersize    = this.layer[l];
+
+                for (int j = 0; j < prelayersize; j++) {
+                    for (int k = 0; k < layersize; k++) {
+
+                        this.dweights[l-1][l][j][k] = this.act[l-1][j][t] * this.delta[l][k][t];
+                        if(this.usebias[l])
+                            this.dweights[l-1][l][layersize][j] = BIAS * this.delta[l][k][t];
+                    }
+                }
             }
 
                 // integrate deltas for non-output layers.
@@ -503,11 +506,6 @@ public class RecurrentNeuralNetwork {
         // epoch loop.
         //
         for (int i = 0; i < epochs; i++) {
-            //
-            // shuffle indices.
-            //
-//            Tools.shuffle(indices, rnd);
-            //
             double errorsum = 0.0;
             //
             // train all samples in online manner, i.e. iterate over all samples
@@ -515,30 +513,40 @@ public class RecurrentNeuralNetwork {
             // immediately after each sample
             //
             for (int e = 0; e < epochs; e++) {
-                //
-                // shuffle indices.
-                //
-//                Tools.shuffle(indices, rnd);
-                //
-//                double errorsum = 0.0;
-
-//                System.out.println(input[0][0].length);
-//                this.forwardPass(input[0]);
                 double[][] prediction = new double[input[0].length][2];
-//                double[][] prediction = new double[][];
-//                System.out.println(Arrays.toString(input));
-
-//                System.out.println(target[0].length);
                 for (int t = 0; t < input[0].length; t++) {
-//                    System.out.println(Arrays.toString(input[0][t]));
                     prediction[t] = this.forwardPass(input[0][t]);
                 }
+                errorsum += RMSE(prediction, target[0]);
 
                 this.backwardPass(target[0]);
+                // update weights
+                this.readDWeights(dweights);
+
+                for (int w = 0; w < this.weightsnum; w++) {
+                    final double dw = - learningrate * dweights[w] + momentumrate * weightsupdate[w];
+                    System.out.println(dweights[w]);
+                    weights[w] = dw;
+                    weightsupdate[w] = dw;
+                }
+                this.writeWeights(weights);
+
+
+//                for (int l = this.layersnum-1; l >= 1 ; l--) {
+//                    final int prelayersize = this.layer[l-1];
+//                    final int layersize    = this.layer[l];
+//
+//                    for (int j = 0; j < prelayersize; j++) {
+//                        for (int k = 0; k < layersize; k++) {
+//                            this.weights[l-1][l][j][k] -= this.dweights[l-1][l][j][k] * learningrate;
+//                        }
+//                    }
+//                }
+
+
 //                for (int t = 0; t < target[0].length; t++) {
 //                    for (int j = 0; j < 2; j++) {
-//                        errorsum += RMSE(prediction, );
-//
+
 //                    }
 //                }
 //                System.out.println(errorsum);
