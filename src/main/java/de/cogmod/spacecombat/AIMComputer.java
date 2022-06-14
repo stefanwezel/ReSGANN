@@ -156,18 +156,19 @@ public class AIMComputer implements SpaceSimulationObserver {
             //
             // TODO: load pretrained ESN.
             //
-            /* // !!! uncomment block to load ESN weight from file.
-            
+            // !!! uncomment block to load ESN weight from file.
+
             final String esnweightsfile = (
-                "data/esn-3-" + 
+                "data/esn-3-" +
                 reservoirsize + "-3.weights"
             );
+//            esnweightsfile = "data/missileRNN.weights";
+//            System.out.println(esnweightsfile);
             final double[] weights = Serializer.read(esnweightsfile);
             //
             this.enemyesn.writeWeights(weights);
             this.enemyesncopy.writeWeights(weights);
-            */
-            //
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
