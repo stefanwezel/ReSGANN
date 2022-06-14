@@ -33,8 +33,23 @@ public class DELearningESN {
         // so solve the same least squares problem as in
         // ReservoirToolsExample.
         //
-        final double[][] A = ReservoirToolsExample.A;
-        final double[][] b = ReservoirToolsExample.b;
+//        final double[][] A = ReservoirToolsExample.A;
+//        final double[][] A;
+        final double[][] b;// = ReservoirToolsExample.b;
+        Random rand = new Random();
+        try {
+            b = loadSequence("data/sequence.txt");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+//        System.out.println(b.length);
+        final double[][] A = new double[b.length][100];
+        for (int i = 0; i < A.length; i++) {
+            for (int j = 0; j < A[0].length; j++) {
+                A[i][j] = rand.nextFloat();
+            }
+        }
+
         //
         final int rowsb = rows(b);
         final int colsb = cols(b);
@@ -147,6 +162,7 @@ public class DELearningESN {
 	 */
     public static double[][] loadSequence(final InputStream inputstream) throws IOException {
         //
+
         final BufferedReader input = new BufferedReader(
             new InputStreamReader(inputstream));
         //
