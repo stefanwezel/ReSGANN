@@ -100,6 +100,8 @@ public class AIMComputer implements SpaceSimulationObserver {
     @Override
     public void simulationStep(final SpaceSimulation sim) {
         //
+        double[][][][] trajectory;
+
         synchronized (this) {
             //
             if (!this.targetlocked) return;
@@ -113,6 +115,8 @@ public class AIMComputer implements SpaceSimulationObserver {
                 enemyrelativeposition.y,
                 enemyrelativeposition.z
             };
+
+            System.out.println(enemyrelativeposition.x);
             //
             // TODO: Update trained ESN with current observation (teacher forcing) ...
             //
@@ -155,19 +159,18 @@ public class AIMComputer implements SpaceSimulationObserver {
             this.enemyesncopy = new EchoStateNetwork(3, reservoirsize, 3);
             //
             // TODO: load pretrained ESN.
+//            this.enemyesn.trainESN();
             //
             // !!! uncomment block to load ESN weight from file.
 
-            final String esnweightsfile = (
-                "data/esn-3-" +
-                reservoirsize + "-3.weights"
-            );
-//            esnweightsfile = "data/missileRNN.weights";
-//            System.out.println(esnweightsfile);
-            final double[] weights = Serializer.read(esnweightsfile);
-            //
-            this.enemyesn.writeWeights(weights);
-            this.enemyesncopy.writeWeights(weights);
+//            final String esnweightsfile = (
+//                "data/esn-3-" +
+//                reservoirsize + "-3.weights"
+//            );
+//            final double[] weights = Serializer.read(esnweightsfile);
+//            //
+//            this.enemyesn.writeWeights(weights);
+//            this.enemyesncopy.writeWeights(weights);
 
         } catch (Exception e) {
             throw new RuntimeException(e);

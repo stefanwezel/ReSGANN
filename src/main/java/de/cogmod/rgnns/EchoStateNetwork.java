@@ -101,6 +101,15 @@ public class EchoStateNetwork extends RecurrentNeuralNetwork {
         //
         // TODO: implement ESN training algorithm here. 
         //
+
+        // Washout phase
+        final EchoStateNetwork esn = new EchoStateNetwork(1, 3, 1);
+
+        for (int i = 0; i < washout; i++) {
+            esn.teacherForcing(sequence[0]);
+        }
+
+
         return 0.0; // error.
     }
     
