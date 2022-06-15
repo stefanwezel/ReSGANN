@@ -47,7 +47,17 @@ public class AIMComputer implements SpaceSimulationObserver {
     public EnemySpaceShip getTarget() {
         return this.enemy;
     }
-    
+
+
+    public int washout = 100;
+    public int train = 500;
+    public int test = 400;
+    public int timestep = 0;
+    public Vector3d[] trajectoryWashout = new Vector3d[this.washout];
+    public Vector3d[] trajectoryTrain = new Vector3d[this.train];
+    public Vector3d[] trajectoryTest = new Vector3d[this.test];
+
+
     public void releaseTarget() {
         synchronized (this) {
             this.enemy = null;
@@ -100,7 +110,7 @@ public class AIMComputer implements SpaceSimulationObserver {
     @Override
     public void simulationStep(final SpaceSimulation sim) {
         //
-        double[][][][] trajectory;
+
 
         synchronized (this) {
             //
@@ -108,13 +118,32 @@ public class AIMComputer implements SpaceSimulationObserver {
             //
             // update trajectory prediction RNN (teacher forcing)
             //
+            this.timestep += 1;
+            System.out.println(timestep);
+
+
             final Vector3d enemyrelativeposition = sim.getEnemy().getRelativePosition();
             //
+            if (this.timestep < this.washout){
+                this.trajectoryWashout[timestep] =enemyrelativeposition;
+            } else if (this.timestep >= this.washout && this.timestep<this.train+this.washout) {
+                this.trajectoryTrain[timestep-this.washout] = enemyrelativeposition;
+            } else if (this.timestep >= this.washout+this.train && this.timestep<this.test+this.train+this.washout) {
+                this.trajectoryTest[timestep-this.washout-this.train] = enemyrelativeposition;
+            }
+
+
+
+
             final double[] update = {
                 enemyrelativeposition.x,
                 enemyrelativeposition.y,
                 enemyrelativeposition.z
             };
+//            trajectory[timer][0] = enemyrelativeposition.x;
+//            trajectory[timer][0] = enemyrelativeposition.x;
+//            trajectory[timer][0] = enemyrelativeposition.x;
+
 
             System.out.println(enemyrelativeposition.x);
             //

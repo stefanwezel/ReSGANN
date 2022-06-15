@@ -102,6 +102,7 @@ public class EchoStateNetwork extends RecurrentNeuralNetwork {
         // TODO: implement ESN training algorithm here. 
         //
 
+
         // Washout phase
         final EchoStateNetwork esn = new EchoStateNetwork(1, 3, 1);
 
