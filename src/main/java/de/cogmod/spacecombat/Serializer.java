@@ -8,6 +8,30 @@ import java.util.Random;
  */
 public class Serializer {
 
+	public static void saveFile(double[][] data, String filename){
+		try {
+			de.jannlab.io.Serializer.write(data, filename);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public static double[][] loadFile(String filename){
+		try {
+			final double[][] trajectory = de.jannlab.io.Serializer.read(filename);
+//			for (int i = 0; i < size; i++) {
+//				System.out.println(values2[i]);
+//			}
+			return trajectory;
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return new double[0][];
+	}
+
+
+
 	public static void main(String[] args) {
 //		TODO add method 'save'
 

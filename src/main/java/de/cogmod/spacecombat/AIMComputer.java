@@ -53,9 +53,10 @@ public class AIMComputer implements SpaceSimulationObserver {
     public int train = 500;
     public int test = 400;
     public int timestep = 0;
-    public Vector3d[] trajectoryWashout = new Vector3d[this.washout];
-    public Vector3d[] trajectoryTrain = new Vector3d[this.train];
-    public Vector3d[] trajectoryTest = new Vector3d[this.test];
+//    public Vector3d[] trajectoryWashout = new Vector3d[this.washout];
+    public double [][] trajectoryWashout = new double[this.washout][3];
+    public double [][] trajectoryTrain = new double[this.train][3];
+    public double [][] trajectoryTest = new double[this.test][3];
 
 
     public void releaseTarget() {
@@ -111,6 +112,9 @@ public class AIMComputer implements SpaceSimulationObserver {
     public void simulationStep(final SpaceSimulation sim) {
         //
 
+        de.cogmod.spacecombat.Serializer serializer = new de.cogmod.spacecombat.Serializer();
+
+
 
         synchronized (this) {
             //
@@ -119,21 +123,31 @@ public class AIMComputer implements SpaceSimulationObserver {
             // update trajectory prediction RNN (teacher forcing)
             //
             this.timestep += 1;
-            System.out.println(timestep);
-
 
             final Vector3d enemyrelativeposition = sim.getEnemy().getRelativePosition();
             //
             if (this.timestep < this.washout){
-                this.trajectoryWashout[timestep] =enemyrelativeposition;
+                this.trajectoryWashout[timestep][0] = (double) enemyrelativeposition.x;
+                this.trajectoryWashout[timestep][1] = (double) enemyrelativeposition.y;
+                this.trajectoryWashout[timestep][2] = (double) enemyrelativeposition.z;
+                serializer.saveFile(this.trajectoryWashout, "data/washout.txt");
+
             } else if (this.timestep >= this.washout && this.timestep<this.train+this.washout) {
-                this.trajectoryTrain[timestep-this.washout] = enemyrelativeposition;
+//                this.trajectoryTrain[timestep-this.washout] = enemyrelativeposition;
+                this.trajectoryTrain[timestep-this.washout][0] = (double) enemyrelativeposition.x;
+                this.trajectoryTrain[timestep-this.washout][1] = (double) enemyrelativeposition.y;
+                this.trajectoryTrain[timestep-this.washout][2] = (double) enemyrelativeposition.z;
+                serializer.saveFile(this.trajectoryTrain, "data/train.txt");
+
+
+
             } else if (this.timestep >= this.washout+this.train && this.timestep<this.test+this.train+this.washout) {
-                this.trajectoryTest[timestep-this.washout-this.train] = enemyrelativeposition;
-            }
-
-
-
+                this.trajectoryTest[timestep-this.washout-this.train][0] = (double) enemyrelativeposition.x;
+                this.trajectoryTest[timestep-this.washout-this.train][1] = (double) enemyrelativeposition.y;
+                this.trajectoryTest[timestep-this.washout-this.train][2] = (double) enemyrelativeposition.z;
+                serializer.saveFile(this.trajectoryTest, "data/test.txt");            }
+            System.out.println(timestep);
+//
 
             final double[] update = {
                 enemyrelativeposition.x,
@@ -145,7 +159,6 @@ public class AIMComputer implements SpaceSimulationObserver {
 //            trajectory[timer][0] = enemyrelativeposition.x;
 
 
-            System.out.println(enemyrelativeposition.x);
             //
             // TODO: Update trained ESN with current observation (teacher forcing) ...
             //
@@ -167,8 +180,10 @@ public class AIMComputer implements SpaceSimulationObserver {
                 this.updateMissileController(currentMissile);
             }
         }
+
+
     }
-    
+
     /**
      * Loads pretrained ESN weights from file. Note that weights can be easily
      * stored in a file using 
@@ -188,7 +203,6 @@ public class AIMComputer implements SpaceSimulationObserver {
             this.enemyesncopy = new EchoStateNetwork(3, reservoirsize, 3);
             //
             // TODO: load pretrained ESN.
-//            this.enemyesn.trainESN();
             //
             // !!! uncomment block to load ESN weight from file.
 

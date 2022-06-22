@@ -1,5 +1,7 @@
 package de.cogmod.rgnns;
 
+import de.cogmod.spacecombat.Serializer;
+
 /**
  * @author Sebastian Otte
  */
@@ -102,6 +104,13 @@ public class EchoStateNetwork extends RecurrentNeuralNetwork {
         // TODO: implement ESN training algorithm here. 
         //
 
+        // load training data
+        de.cogmod.spacecombat.Serializer serializer = new de.cogmod.spacecombat.Serializer();
+        double[][] newTrajectory;
+        newTrajectory = serializer.loadFile("data/test.txt");
+        for (int i = 0; i < newTrajectory.length; i++) {
+            System.out.println(newTrajectory[i][1]);
+        }
 
         // Washout phase
         final EchoStateNetwork esn = new EchoStateNetwork(1, 3, 1);
