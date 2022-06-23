@@ -7,7 +7,6 @@ import java.util.Random;
 import de.cogmod.rgnns.EchoStateNetwork;
 import de.cogmod.rgnns.RecurrentNeuralNetwork;
 import de.cogmod.rgnns.math.Vector3d;
-import de.cogmod.spacecombat.AIMComputer;
 import de.cogmod.spacecombat.simulation.EnemySpaceShip;
 import de.cogmod.spacecombat.simulation.Missile;
 import de.cogmod.spacecombat.simulation.SpaceSimulation;
@@ -53,9 +52,12 @@ public class AIMComputer implements SpaceSimulationObserver {
     public int train = 500;
     public int test = 400;
     public int timestep = 0;
+
+    public int reservoirSize = 5;
 //    public Vector3d[] trajectoryWashout = new Vector3d[this.washout];
     public double [][] trajectoryWashout = new double[this.washout][3];
     public double [][] trajectoryTrain = new double[this.train][3];
+    public double [][] reservoirStates = new double[this.train][this.reservoirSize];
     public double [][] trajectoryTest = new double[this.test][3];
 
 
@@ -133,7 +135,14 @@ public class AIMComputer implements SpaceSimulationObserver {
                 serializer.saveFile(this.trajectoryWashout, "data/washout.txt");
 
             } else if (this.timestep >= this.washout && this.timestep<this.train+this.washout) {
-//                this.trajectoryTrain[timestep-this.washout] = enemyrelativeposition;
+                // collect reservoir states during training
+//                System.out.println(enemyesn.getReservoirWeights()[0].length);
+                for (int i = 0; i < this.reservoirSize; i++) {
+                    this.reservoirStates[timestep-this.washout][i] = enemyesn.getReservoirWeights()[0][i];
+                }
+                serializer.saveFile(this.reservoirStates, "data/reservoirStatesTrain.txt");
+
+                // collect and save trajectory for training
                 this.trajectoryTrain[timestep-this.washout][0] = (double) enemyrelativeposition.x;
                 this.trajectoryTrain[timestep-this.washout][1] = (double) enemyrelativeposition.y;
                 this.trajectoryTrain[timestep-this.washout][2] = (double) enemyrelativeposition.z;
@@ -154,17 +163,15 @@ public class AIMComputer implements SpaceSimulationObserver {
                 enemyrelativeposition.y,
                 enemyrelativeposition.z
             };
-//            trajectory[timer][0] = enemyrelativeposition.x;
-//            trajectory[timer][0] = enemyrelativeposition.x;
-//            trajectory[timer][0] = enemyrelativeposition.x;
-
-
             //
             // TODO: Update trained ESN with current observation (teacher forcing) ...
             //
             
             // ...
-            
+//            System.out.println(update[0]);
+            this.enemyesn.teacherForcing(update);
+
+
             //
             // use copy of the RNN to generate future projection (replace dummy method).
             //
@@ -198,7 +205,7 @@ public class AIMComputer implements SpaceSimulationObserver {
             //
             // load esn.
             //
-            final int reservoirsize = 1; // use reasonable value here.
+            final int reservoirsize = this.reservoirSize; // use reasonable value here.
             this.enemyesn     = new EchoStateNetwork(3, reservoirsize, 3);
             this.enemyesncopy = new EchoStateNetwork(3, reservoirsize, 3);
             //

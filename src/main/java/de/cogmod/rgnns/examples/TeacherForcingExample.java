@@ -28,7 +28,7 @@ public class TeacherForcingExample {
         //
         // washout with teacher forcing
         //
-        final double[] target = new double[1];
+        final double[] target = new double[10];
         //
         System.out.println("washout with teacher forcing");
         //
