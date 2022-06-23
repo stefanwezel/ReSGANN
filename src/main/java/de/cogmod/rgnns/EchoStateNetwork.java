@@ -1,6 +1,6 @@
 package de.cogmod.rgnns;
 
-import de.cogmod.spacecombat.Serializer;
+import java.util.Arrays;
 
 /**
  * @author Sebastian Otte
@@ -80,11 +80,12 @@ public class EchoStateNetwork extends RecurrentNeuralNetwork {
     public void teacherForcing(final double[] target) {
         //
         final double[][][] act = this.getAct();
-        final int outputlayer  = this.getOutputLayer(); 
+        final int outputlayer  = this.getOutputLayer();
         //
         final int n = act[outputlayer].length;
         //
-        final int t = this.getLastInputLength() - 1;
+//        final int t = this.getLastInputLength()-1;
+        final int t = this.getLastInputLength();
         //
         for (int i = 0; i < n; i++) {
             act[outputlayer][i][t] = target[i];
@@ -106,19 +107,39 @@ public class EchoStateNetwork extends RecurrentNeuralNetwork {
 
         // load training data
         de.cogmod.spacecombat.Serializer serializer = new de.cogmod.spacecombat.Serializer();
-        double[][] newTrajectory;
-        newTrajectory = serializer.loadFile("data/test.txt");
-        for (int i = 0; i < newTrajectory.length; i++) {
-            System.out.println(newTrajectory[i][1]);
-        }
 
         // Washout phase
-        final EchoStateNetwork esn = new EchoStateNetwork(1, 3, 1);
-
+        final EchoStateNetwork esn = new EchoStateNetwork(1, 5, 1);
+        double[][] washoutTrajectory;
+        washoutTrajectory = Arrays.copyOfRange(sequence, 0, washout);
         for (int i = 0; i < washout; i++) {
             esn.teacherForcing(sequence[0]);
         }
+        // Training phase
+        double[][] targetSequence;
+        double[][] reservoirStates;
+        // load collected data
+        targetSequence = Arrays.copyOfRange(sequence, washout, washout+training);
+        reservoirStates = Arrays.copyOfRange(
+                serializer.loadFile("data/reservoirStatesTrain.txt"),
+                washout,
+                washout+training);
+        // convert target sequence and reservoir states to matrices
+        org.ejml.simple.SimpleMatrix T = new org.ejml.simple.SimpleMatrix(targetSequence);
+        org.ejml.simple.SimpleMatrix M = new org.ejml.simple.SimpleMatrix(reservoirStates);
+        // invert M
+        org.ejml.simple.SimpleMatrix invM = new org.ejml.simple.SimpleMatrix(M.pseudoInverse());
+        // multiply inverted M with T to create W_out
+        org.ejml.simple.SimpleMatrix outW = invM.mult(T);
 
+        // parse weights into array and save them
+        double[][] weightsTrained = new double[outW.numCols()][outW.numRows()];
+        for (int column = 0; column < outW.numCols(); column++) {
+            for (int row = 0; row < outW.numRows(); row++) {
+                weightsTrained[column][row] = outW.get(row, column);
+            }
+        }
+        serializer.saveFile(weightsTrained, "esn.weights");
 
         return 0.0; // error.
     }

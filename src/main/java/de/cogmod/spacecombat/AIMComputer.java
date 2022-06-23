@@ -1,9 +1,6 @@
 package de.cogmod.spacecombat;
 
 
-import java.util.List;
-import java.util.Random;
-
 import de.cogmod.rgnns.EchoStateNetwork;
 import de.cogmod.rgnns.RecurrentNeuralNetwork;
 import de.cogmod.rgnns.math.Vector3d;
@@ -12,6 +9,10 @@ import de.cogmod.spacecombat.simulation.Missile;
 import de.cogmod.spacecombat.simulation.SpaceSimulation;
 import de.cogmod.spacecombat.simulation.SpaceSimulationObserver;
 import de.jannlab.io.Serializer;
+
+import java.util.List;
+import java.util.Random;
+
 
 /**
  * @author Sebastian Otte
@@ -48,17 +49,18 @@ public class AIMComputer implements SpaceSimulationObserver {
     }
 
 
-    public int washout = 100;
-    public int train = 500;
+    public int washout = 10;
+    public int train = 10;
     public int test = 400;
     public int timestep = 0;
 
     public int reservoirSize = 5;
 //    public Vector3d[] trajectoryWashout = new Vector3d[this.washout];
-    public double [][] trajectoryWashout = new double[this.washout][3];
-    public double [][] trajectoryTrain = new double[this.train][3];
-    public double [][] reservoirStates = new double[this.train][this.reservoirSize];
-    public double [][] trajectoryTest = new double[this.test][3];
+    public double[][] trajectory = new double[this.washout+this.train+this.test][3];
+//    public double [][] trajectoryWashout = new double[this.washout][3];
+//    public double [][] trajectoryTrain = new double[this.train][3];
+    public double [][] reservoirStates = new double[this.washout+this.train+this.test][this.reservoirSize];
+//    public double [][] trajectoryTest = new double[this.test][3];
 
 
     public void releaseTarget() {
@@ -127,36 +129,20 @@ public class AIMComputer implements SpaceSimulationObserver {
             this.timestep += 1;
 
             final Vector3d enemyrelativeposition = sim.getEnemy().getRelativePosition();
-            //
-            if (this.timestep < this.washout){
-                this.trajectoryWashout[timestep][0] = (double) enemyrelativeposition.x;
-                this.trajectoryWashout[timestep][1] = (double) enemyrelativeposition.y;
-                this.trajectoryWashout[timestep][2] = (double) enemyrelativeposition.z;
-                serializer.saveFile(this.trajectoryWashout, "data/washout.txt");
+            if (this.timestep < this.washout + this.train+this.test){
+                this.trajectory[timestep][0] = (double) enemyrelativeposition.x;
+                this.trajectory[timestep][1] = (double) enemyrelativeposition.y;
+                this.trajectory[timestep][2] = (double) enemyrelativeposition.z;
+                serializer.saveFile(this.trajectory, "data/trajectory.txt");
 
-            } else if (this.timestep >= this.washout && this.timestep<this.train+this.washout) {
                 // collect reservoir states during training
-//                System.out.println(enemyesn.getReservoirWeights()[0].length);
                 for (int i = 0; i < this.reservoirSize; i++) {
-                    this.reservoirStates[timestep-this.washout][i] = enemyesn.getReservoirWeights()[0][i];
+                    this.reservoirStates[timestep][i] = enemyesn.getReservoirWeights()[0][i];
                 }
                 serializer.saveFile(this.reservoirStates, "data/reservoirStatesTrain.txt");
+            }
 
-                // collect and save trajectory for training
-                this.trajectoryTrain[timestep-this.washout][0] = (double) enemyrelativeposition.x;
-                this.trajectoryTrain[timestep-this.washout][1] = (double) enemyrelativeposition.y;
-                this.trajectoryTrain[timestep-this.washout][2] = (double) enemyrelativeposition.z;
-                serializer.saveFile(this.trajectoryTrain, "data/train.txt");
-
-
-
-            } else if (this.timestep >= this.washout+this.train && this.timestep<this.test+this.train+this.washout) {
-                this.trajectoryTest[timestep-this.washout-this.train][0] = (double) enemyrelativeposition.x;
-                this.trajectoryTest[timestep-this.washout-this.train][1] = (double) enemyrelativeposition.y;
-                this.trajectoryTest[timestep-this.washout-this.train][2] = (double) enemyrelativeposition.z;
-                serializer.saveFile(this.trajectoryTest, "data/test.txt");            }
             System.out.println(timestep);
-//
 
             final double[] update = {
                 enemyrelativeposition.x,
@@ -168,8 +154,14 @@ public class AIMComputer implements SpaceSimulationObserver {
             //
             
             // ...
-//            System.out.println(update[0]);
             this.enemyesn.teacherForcing(update);
+
+            if (timestep == this.washout+this.train + 1){
+                System.out.println("------------------");
+                // TODO: train ESN here
+                trajectory = serializer.loadFile("data/trajectory.txt");
+                this.enemyesn.trainESN(trajectory, this.washout, this.train, this.test);
+            }
 
 
             //
